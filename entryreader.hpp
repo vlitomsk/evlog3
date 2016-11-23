@@ -4,11 +4,12 @@
 #include <iostream>
 #include <string>
 #include "entry.hpp"
+#include "cachedstringfinder.hpp"
 
 class EntryReader {
     std::istream &is;
     bool eof;
-    mutable size_t lastTimePos;
+    const CachedStringFinder timeFinder;
     double extractTime(const std::string &) const;
 public:
     EntryReader(std::istream &is);

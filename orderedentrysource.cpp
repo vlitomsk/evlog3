@@ -19,15 +19,17 @@ fillBuffers(
     std::vector<size_t> &idcsToClose) const
 {
     const size_t sz = readers.size();
+    Entry entry;
     for (size_t i = 0; i < sz; ++i) {
         size_t j;
         for (j = 0; j < maxBufSize && !readers[i].isEof(); ++j) {
-            bufs[i].emplace_back();
-            readers[i] >> bufs[i][j];
+            readers[i] >> entry;
+            if (!isDropped(entry) && isSelected(entry)) {
+                bufs[i].push_back(entry);
+            }
         }
         if (readers[i].isEof())
             idcsToClose.push_back(i);
-        bufs[i].resize(j);
     }
 }
 
@@ -136,6 +138,7 @@ getTempOstream(std::string &filePath) {
     return std::shared_ptr<std::ostream>(new std::ofstream(filePath));
 }
 
+
 OrderedEntrySource::
 OrderedEntrySource()
 {
@@ -144,6 +147,7 @@ OrderedEntrySource()
     restr.maxOpenedFiles = 1000;
 }
 
+
 void OrderedEntrySource::
 resetPrefilter() {
     setPrefilter(
@@ -151,10 +155,12 @@ resetPrefilter() {
         [](const Entry &) { return false; } );
 }
 
+
 void OrderedEntrySource::
 setRestrictions(const Restrictions &restr) {
     this->restr = restr;
 }
+
 
 void OrderedEntrySource::
 setPrefilter(FiltFunc isSelected, FiltFunc isDropped) {
@@ -162,10 +168,12 @@ setPrefilter(FiltFunc isSelected, FiltFunc isDropped) {
     this->isDropped = isDropped;
 }
 
+
 void OrderedEntrySource::
 setConsumers(const std::vector<ConsumerPtr> &consumers) {
     this->consumers = consumers;
 }
+
 
 void OrderedEntrySource::
 emitMerged(const std::vector<std::string> &logPaths) {

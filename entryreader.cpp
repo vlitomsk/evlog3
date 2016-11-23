@@ -4,7 +4,7 @@
 EntryReader::EntryReader(std::istream &is)
     : is(is)
     , eof(false)
-    , lastTimePos(1)
+    , timeFinder("\"time\":", 1)
 {
     char c;
     do {
@@ -18,19 +18,10 @@ EntryReader::EntryReader(std::istream &is)
 
 
 double EntryReader::extractTime(const std::string &s) const {
-    static constexpr char timeStr[] = "\"time\":";
-    static constexpr int timeStrLen = sizeof(timeStr) - 1;
-
-    if (lastTimePos >= s.size() || s.compare(lastTimePos, timeStrLen, timeStr) != 0) {
-        auto pos = s.find("\"time\":", 0);
-        if (pos == std::string::npos) {
-            lastTimePos = 0;
-            return -1;
-        } else {
-            lastTimePos = pos;
-        }
-    }
-    return strtod(s.data() + lastTimePos + timeStrLen, NULL);
+    auto timePos = timeFinder.findIn(s);
+    return timePos == std::string::npos
+            ? -1
+            : strtod(s.data() + timePos + timeFinder.getSubstrLen(), NULL);
 }
 
 
