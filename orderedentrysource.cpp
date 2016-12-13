@@ -131,14 +131,6 @@ mergeLogsKway(
 }
 
 
-std::shared_ptr<std::ostream> OrderedEntrySource::
-getTempOstream(std::string &filePath) {
-    filePath = "/tmp/tmpfileXXXXXX";
-    mkstemp(&filePath[0]);
-    return std::shared_ptr<std::ostream>(new std::ofstream(filePath));
-}
-
-
 OrderedEntrySource::
 OrderedEntrySource()
 {
@@ -175,39 +167,81 @@ setConsumers(const std::vector<ConsumerPtr> &consumers) {
 }
 
 
+class AutoRmFile {
+    std::string filePath;
+    bool autoRm;
+public:
+    AutoRmFile(const std::string &filePath, bool autoRm)
+        : filePath(filePath)
+        , autoRm(autoRm)
+    {}
+
+    std::shared_ptr<std::ostream> openWrite() {
+        auto ptr = std::shared_ptr<std::ostream>(new std::ofstream(filePath));
+        if (!*ptr)
+            throw std::invalid_argument(
+                    std::string("File can't be opened for writing: ") + filePath);
+        return ptr;
+    }
+
+    std::shared_ptr<std::istream> openRead() {
+        auto ptr = std::shared_ptr<std::istream>(new std::ifstream(filePath));
+        if (!*ptr)
+            throw std::invalid_argument(
+                    std::string("File can't be opened for reading: ") + filePath);
+        return ptr;
+    }
+
+    const std::string & getFilePath() const { return filePath; }
+    bool isAutoRm() const { return autoRm; }
+
+    ~AutoRmFile() {
+        if (autoRm)
+            unlink(filePath.c_str());
+    }
+};
+
+
+std::string OrderedEntrySource::
+getTempFileName() const {
+    std::string name = tempfileTempl;
+    mkstemp(&name[0]);
+    return name;
+}
+
+
 void OrderedEntrySource::
+setTempfileTemplate(const std::string &templ) {
+    tempfileTempl = templ;
+}
+
+
+bool OrderedEntrySource::
 emitMerged(const std::vector<std::string> &logPaths) {
     using namespace std;
     using namespace std::placeholders;
-    queue<pair<bool, string>> pathsToMerge;
+    queue<AutoRmFile> pathsToMerge;
     for (auto p : logPaths) {
-        pathsToMerge.push({false, p});
+        pathsToMerge.emplace(p, false);
     }
 
     while (!pathsToMerge.empty()) {
         vector<shared_ptr<istream>> iss;
 
-        const auto i_to = min(restr.maxOpenedFiles, (int)pathsToMerge.size());
-        for (int i = 0; i < i_to; ++i) {
-            const auto &front = pathsToMerge.front();
-            iss.push_back(shared_ptr<istream>(new ifstream(front.second)));
-            if (front.first) {
-                unlink(front.second.c_str());
-            }
+        for (int i = min(restr.maxOpenedFiles, (int)pathsToMerge.size()); i > 0; --i) {
+            iss.push_back(pathsToMerge.front().openRead());
             pathsToMerge.pop();
         }
 
         if (pathsToMerge.empty()) {
+            // It's the last merge, so feed subscribers with algo result
             mergeLogsKway(iss, restr,
                           bind(&OrderedEntrySource::consumeEntry, this, _1));
         } else {
-            string filePath;
-            auto tempOsPtr = getTempOstream(filePath);
-            EntryWriter tmpWriter(*tempOsPtr);
-            mergeLogsKway(iss, restr,
-                [&](Entry &ent) { tmpWriter << ent; });
-            pathsToMerge.push({ true, move(filePath) });
+            // It's not the last merge, so remember algo result in temp files
+            pathsToMerge.emplace(getTempFileName(), true);
+            EntryWriter tmpWriter(*pathsToMerge.back().openWrite());
+            mergeLogsKway(iss, restr, [&](Entry &ent) { tmpWriter << ent; });
         }
-
     }
 }

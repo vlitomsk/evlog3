@@ -14,7 +14,9 @@ private:
     FiltFunc isSelected, isDropped;
     std::vector<ConsumerPtr> consumers;
     Restrictions restr;
+    std::string tempfileTempl = "/tmp/tmpfileXXXXXX";
 
+    std::string getTempFileName() const;
     void clearBuffers(std::vector<EntryBuf> &bufs) const;
 
     void fillBuffers(
@@ -36,15 +38,14 @@ private:
         const Restrictions &restr,
         std::function<void(Entry &ent)> propagate) const;
 
-    std::shared_ptr<std::ostream> getTempOstream(std::string &filePath);
-
 public:
     OrderedEntrySource();
     void resetPrefilter();
     void setRestrictions(const Restrictions &restr);
     void setPrefilter(FiltFunc isSelected, FiltFunc isDropped);
     void setConsumers(const std::vector<ConsumerPtr> &consumers);
-    void emitMerged(const std::vector<std::string> &logPaths);
+    void setTempfileTemplate(const std::string &templ);
+    bool emitMerged(const std::vector<std::string> &logPaths);
 };
 
 #endif // ORDEREDENTRYSOURCE_HPP_

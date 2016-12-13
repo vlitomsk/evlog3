@@ -52,6 +52,8 @@ public:
     }
 };
 
+class N
+
 };
 
 #endif // STATCOLLECTORS_HPP_
