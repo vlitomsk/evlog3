@@ -6,8 +6,10 @@
 
 struct Consumer {
     virtual void operator <<(const Entry &ent) = 0;
+    virtual void endOfSequence() = 0;
 };
-typedef std::shared_ptr<Consumer> ConsumerPtr;
+
+using ConsumerPtr = std::shared_ptr<Consumer>;
 
 #endif // CONSUMER_HPP_
 

@@ -19,3 +19,6 @@ void EntryWriter::operator <<(const Entry &ent) {
 
     os << ent.str;
 }
+
+void EntryWriter::endOfSequence() {
+}
