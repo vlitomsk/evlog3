@@ -9,7 +9,7 @@ class SubstrPrefilter {
 public:
     SubstrPrefilter(const std::string &substr);
     inline bool matches(const Entry &ent) const {
-        return finder.findIn(ent.str) != std::string::npos;
+        return finder.findIn(ent.getStr()) != std::string::npos;
     }
 
     inline bool nmatches(const Entry &ent) const { return !matches(ent); }

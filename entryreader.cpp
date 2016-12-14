@@ -28,13 +28,13 @@ double EntryReader::extractTime(const std::string &s) const {
 void EntryReader::operator >>(Entry &ent) {
     if (eof)
         return;
-    std::string &s = ent.str;
-    std::getline(is, s);
-    ent.time = extractTime(s);
 
+    std::string s;
+    std::getline(is, s);
     if (s[s.size() - 1] == ',') {
         s.resize(s.size() - 1);
     } else {
         eof = true;
     }
+    ent.setStr(s);
 }

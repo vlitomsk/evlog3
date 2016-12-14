@@ -11,6 +11,7 @@ public:
     typedef std::function<bool(const Entry &)> FiltFunc;
 
 private:
+    std::shared_ptr<Entry::EntryParser> entryParser;
     FiltFunc isSelected, isDropped;
     std::vector<ConsumerPtr> consumers;
     Restrictions restr;

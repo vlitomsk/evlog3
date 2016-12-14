@@ -19,13 +19,15 @@ fillBuffers(
     std::vector<size_t> &idcsToClose) const
 {
     const size_t sz = readers.size();
-    Entry entry;
     for (size_t i = 0; i < sz; ++i) {
         size_t j;
         for (j = 0; j < maxBufSize && !readers[i].isEof(); ++j) {
+            Entry entry;
             readers[i] >> entry;
+            //entry.setEntryParser(entryParser);
             if (!isDropped(entry) && isSelected(entry)) {
                 bufs[i].push_back(entry);
+                bufs[i].back().setEntryParser(entryParser);
             }
         }
         if (readers[i].isEof())
@@ -78,7 +80,7 @@ mergePropagateBuffers(
     struct MergeSetComp {
         bool operator () (const MergeSetType &l, const MergeSetType &r) const {
             // multiset's .begin() would point to MIN ; .rbegin() -- to MAX
-            return l.second->time < r.second->time;
+            return l.second->getTime() < r.second->getTime();
         }
     };
 
@@ -137,6 +139,7 @@ OrderedEntrySource()
     resetPrefilter();
     restr.maxBufEntries = 1000;
     restr.maxOpenedFiles = 1000;
+    entryParser = std::make_shared<Entry::EntryParser>();
 }
 
 

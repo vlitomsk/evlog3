@@ -17,7 +17,7 @@ void EntryWriter::operator <<(const Entry &ent) {
         os << ",\n";
     }
 
-    os << ent.str;
+    os << ent.getStr();
 }
 
 void EntryWriter::endOfSequence() {
