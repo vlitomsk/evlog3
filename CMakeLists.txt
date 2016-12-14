@@ -5,7 +5,6 @@ add_executable(${PROJECT_NAME}
 main.cpp
 restrictions.hpp # *.hpp is for QtCreator's project tree.
 consumer.hpp
-suspension.hpp
 entry.cpp entry.hpp
 entryreader.cpp entryreader.hpp
 entrywriter.cpp entrywriter.hpp
